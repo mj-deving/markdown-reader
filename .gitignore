@@ -13,6 +13,11 @@ build/
 .next/
 .output/
 
+# Tauri / Rust
+tauri-app/src-tauri/target/
+tauri-app/dist/
+tauri-app/node_modules/
+
 # IDE
 .vscode/
 .idea/
