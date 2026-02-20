@@ -10,6 +10,9 @@ export default defineConfig({
     },
   },
   server: {
+    // Must match devUrl in tauri.conf.json
+    port: 1420,
+    strictPort: true,
     fs: {
       // Allow serving files from the parent src/ directory
       allow: ['.', '../src'],

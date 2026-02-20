@@ -73,29 +73,57 @@ fn start_watcher(app_handle: AppHandle, file_path: PathBuf) {
     });
 }
 
+/// Resolve a relative path by trying the given base directory first, then walking
+/// up to parent directories. This handles `cargo tauri dev` where the binary's CWD
+/// is src-tauri/ but the user typed the path relative to tauri-app/.
+fn resolve_relative_path(base: &PathBuf, relative: &PathBuf) -> PathBuf {
+    let mut dir = base.clone();
+    // Try up to 3 parent levels (src-tauri → tauri-app → project root → above)
+    for _ in 0..4 {
+        let candidate = dir.join(relative);
+        if let Ok(resolved) = candidate.canonicalize() {
+            return resolved;
+        }
+        // Move up one directory
+        if !dir.pop() {
+            break;
+        }
+    }
+    // Nothing found — return the original CWD-based path so the error message is clear
+    base.join(relative)
+}
+
 fn main() {
+    let cwd = std::env::current_dir().unwrap_or_default();
+
+    // Parse CLI args early — before Tauri setup() — for correct path resolution.
+    let args: Vec<String> = std::env::args().collect();
+    let file_path = if args.len() > 1 {
+        let p = PathBuf::from(&args[1]);
+        if p.is_absolute() {
+            p
+        } else {
+            // During `cargo tauri dev`, the binary CWD is src-tauri/ — one level
+            // deeper than the user's shell (tauri-app/). Try CWD first, then walk
+            // up parent directories to find the file. In production, the OS passes
+            // absolute paths via file associations, so this only matters for dev.
+            resolve_relative_path(&cwd, &p)
+        }
+    } else {
+        // No file argument — will show a friendly message in setup()
+        PathBuf::new()
+    };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![read_file])
-        .setup(|app| {
-            // Get the file path from CLI arguments
-            // Usage: md-reader-app <file.md>
-            let args: Vec<String> = std::env::args().collect();
-            let file_path = if args.len() > 1 {
-                PathBuf::from(&args[1])
-            } else {
-                // Default to README.md in the current directory for development
-                PathBuf::from("README.md")
-            };
-
-            // Resolve to absolute path
-            let file_path = if file_path.is_relative() {
-                std::env::current_dir()
-                    .unwrap_or_default()
-                    .join(&file_path)
-            } else {
-                file_path
-            };
+        .setup(move |app| {
+            // Validate the file path
+            if file_path.as_os_str().is_empty() {
+                eprintln!("Usage: md-reader <file.md>");
+                eprintln!("No file specified. Please provide a markdown file path.");
+                std::process::exit(1);
+            }
 
             if !file_path.exists() {
                 eprintln!("Error: File not found: {}", file_path.display());
