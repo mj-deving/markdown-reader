@@ -10,9 +10,10 @@ CLI tool that renders markdown files as a beautiful HTML reading experience
 
 ## Tech Stack
 
-- **Runtime:** Bun + TypeScript
-- **Frontend:** React + Tailwind CSS (if applicable)
-- **Deployment:** Cloudflare (if applicable)
+- **Runtime:** Bun 1.3.9 + TypeScript
+- **Markdown pipeline:** unified + remark-parse + remark-gfm + remark-rehype + rehype-highlight + rehype-stringify
+- **Output:** Self-contained HTML (all CSS inlined, zero external requests)
+- **Global binary:** `~/.bun/bin/md-reader` (via `bun link`)
 
 ## Conventions
 
@@ -30,20 +31,36 @@ CLI tool that renders markdown files as a beautiful HTML reading experience
 
 ## Project Structure
 
-<!-- Update this as the project evolves -->
-
 ```
 .
 ├── CLAUDE.md          # This file — project context for Isidore
-├── README.md          # Public-facing project documentation
-├── src/               # Source code
-└── ...
+├── README.md          # Public-facing documentation
+├── package.json       # Bun deps + bin: md-reader → src/cli.ts
+├── tsconfig.json
+├── bun.lock
+├── src/
+│   ├── cli.ts         # Entry point: arg parsing, orchestration
+│   ├── converter.ts   # unified markdown → HTML body pipeline
+│   ├── template.ts    # Wraps body in full HTML page
+│   ├── styles.ts      # Self-contained CSS (dark/light, hljs themes)
+│   └── opener.ts      # WSL2-aware browser opener (cmd.exe + wslpath)
+├── test/
+│   └── fixture.md     # GFM feature test fixture
+└── .sessions/         # Session docs (gitignored)
 ```
 
 ## Current State
 
-<!-- Update this section at the end of each session -->
+**Status:** v0.1.0 complete — shipped 2026-02-20
+**Last session:** 2026-02-20 — built full v0.1.0 CLI (11/11 ISC passing, 267ms conversion)
 
-**Status:** Just started
-**Last session:** 2026-02-20
-**Next steps:** TBD
+**Usage:**
+```bash
+md-reader README.md              # convert + open in browser
+md-reader file.md --no-open     # convert only, print path
+md-reader file.md --output ~/Desktop/out.html
+```
+
+**Next steps (v2):**
+- `--watch` mode for live reload
+- PDF export via headless browser

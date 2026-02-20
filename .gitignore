@@ -31,6 +31,9 @@ Thumbs.db
 .claude/shell-snapshots/
 .claude/file-history/
 
+# Session docs (PAI wrapup)
+.sessions/
+
 # Secrets
 *.pem
 *.key
