@@ -45,6 +45,12 @@ export async function startWatchMode(inputFile: string): Promise<void> {
     fetch(req, server) {
       const url = new URL(req.url)
 
+      // Reject requests from non-localhost origins (DNS rebinding protection)
+      const host = req.headers.get('host')
+      if (host && !host.startsWith('localhost:') && !host.startsWith('127.0.0.1:')) {
+        return new Response('Forbidden', { status: 403 })
+      }
+
       // WebSocket upgrade for the live-reload channel
       if (url.pathname === '/__ws') {
         const upgraded = server.upgrade(req)

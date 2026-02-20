@@ -45,10 +45,15 @@ async function init(): Promise<void> {
     const markdown = await invoke<string>('read_file')
     await render(markdown)
   } catch (err) {
-    contentEl.innerHTML = `<article class="prose">
-      <h1>Error</h1>
-      <p>Could not load file: ${String(err)}</p>
-    </article>`
+    // Use textContent for error messages to prevent XSS via error strings
+    const article = document.createElement('article')
+    article.className = 'prose'
+    const h1 = document.createElement('h1')
+    h1.textContent = 'Error'
+    const p = document.createElement('p')
+    p.textContent = `Could not load file: ${String(err)}`
+    article.append(h1, p)
+    contentEl.replaceChildren(article)
   }
 }
 
