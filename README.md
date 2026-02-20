@@ -12,7 +12,13 @@ Dark/light theme, GitHub Flavored Markdown, syntax highlighting, live reload, PD
 - **Syntax highlighting** — via highlight.js with theme-matched colors
 - **Live reload** — `--watch` mode with WebSocket hot-refresh
 - **PDF export** — `--pdf` via headless Chrome/Edge/Chromium
-- **Desktop app** — native Tauri window with TOC sidebar and file watching
+- **Desktop app** — native Tauri window with polished PDF-reader-quality experience:
+  - **Toolbar** — sidebar toggle, filename display, theme switch, reading progress bar
+  - **Page-on-canvas design** — elevated page surface with warm canvas background
+  - **Scroll spy TOC** — IntersectionObserver-based active heading tracking
+  - **Theme toggle** — three-state cycle (light / dark / system) with persistence
+  - **Keyboard navigation** — `j`/`k` scroll, `Space`/`Shift+Space` page, `Ctrl+B` sidebar
+  - **Smooth transitions** — fade animations on live-reload with scroll position preservation
 - **OS integration** — right-click "Open with" on Windows and Linux
 
 ## Installation
@@ -138,4 +144,4 @@ npx tauri dev -- -- ../README.md
 
 ---
 
-**Author:** Marius Jonathan Jauernik
+**Author:** Marius
