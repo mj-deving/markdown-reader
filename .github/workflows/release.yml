@@ -43,6 +43,9 @@ jobs:
         with:
           workspaces: tauri-app/src-tauri
 
+      - name: Install shared dependencies
+        run: npm install --ignore-scripts
+
       - name: Install frontend dependencies
         working-directory: tauri-app
         run: npm ci
@@ -77,6 +80,9 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: tauri-app/src-tauri
+
+      - name: Install shared dependencies
+        run: npm install --ignore-scripts
 
       - name: Install frontend dependencies
         working-directory: tauri-app
