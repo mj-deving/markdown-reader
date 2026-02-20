@@ -1,0 +1,19 @@
+[Desktop Entry]
+# md-reader — XDG desktop entry for Linux file manager integration
+#
+# Install:
+#   cp md-reader.desktop ~/.local/share/applications/
+#   xdg-mime default md-reader.desktop text/markdown
+#
+# Uninstall:
+#   rm ~/.local/share/applications/md-reader.desktop
+#   xdg-mime default <other-app>.desktop text/markdown
+
+Type=Application
+Name=md-reader
+Comment=Render markdown as a beautiful HTML reading experience
+Exec=/home/mj/.bun/bin/bun /home/mj/projects/markdown-reader/src/cli.ts %f
+MimeType=text/markdown;text/x-markdown;
+Terminal=false
+Categories=Utility;TextEditor;
+Icon=text-x-markdown
