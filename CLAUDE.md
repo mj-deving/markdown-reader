@@ -80,8 +80,8 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 
 ## Current State
 
-**Status:** v1.0.0 shipped — 2026-02-20
-**Last session:** 2026-02-20 — Tauri runtime test + UX overhaul plan designed
+**Status:** v1.0.0 shipped — UX overhaul implemented, pending runtime test
+**Last session:** 2026-02-20 — UX overhaul implemented (toolbar, theme, scroll spy, keyboard nav)
 
 **Usage:**
 ```bash
@@ -96,7 +96,8 @@ md-reader file.md --output ~/Desktop/out.html
 
 ## Open Items
 
-- [ ] Implement UX overhaul (plan at `tauri-app/Plans/drifting-beaming-planet.md`)
+- [x] Implement UX overhaul (plan at `tauri-app/Plans/drifting-beaming-planet.md`)
+- [ ] Runtime test UX overhaul, then tag v1.1.0
 - [ ] Design proper app icons (currently solid-color placeholders)
 - [ ] Consider code signing for future releases (SmartScreen)
 - [ ] Tauri auto-update plugin for future versions
