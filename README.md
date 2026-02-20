@@ -120,10 +120,19 @@ npm install
 npx tauri dev -- -- ../README.md
 ```
 
+## Security
+
+- **HTML sanitization** — `rehype-sanitize` strips all dangerous HTML from markdown input
+- **Content Security Policy** — Tauri WebView enforces `script-src 'self'` (no inline scripts)
+- **No shell injection** — all process spawning uses array args, never shell strings
+- **DNS rebinding protection** — watch mode validates Host header on all requests
+- **Supply chain hardening** — CI actions pinned to commit SHAs, not mutable tags
+- **Minimal permissions** — Tauri app has empty capabilities (no filesystem/shell/network access from WebView)
+
 ## Tech Stack
 
 - **Runtime:** Bun + TypeScript
-- **Markdown:** unified + remark-parse + remark-gfm + remark-rehype + rehype-highlight + rehype-stringify
+- **Markdown:** unified + remark-parse + remark-gfm + remark-rehype + rehype-sanitize + rehype-highlight + rehype-stringify
 - **Desktop:** Tauri v2 (Rust backend + WebView frontend)
 - **CI/CD:** GitHub Actions — tag push triggers cross-platform release builds
 
