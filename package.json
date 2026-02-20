@@ -1,6 +1,6 @@
 {
   "name": "markdown-reader",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI tool that renders markdown files as a beautiful HTML reading experience",
   "bin": {
     "md-reader": "src/cli.ts"

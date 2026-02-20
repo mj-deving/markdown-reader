@@ -16,12 +16,12 @@ async function toWindowsPath(linuxPath: string): Promise<string> {
   return output.trim()
 }
 
-export async function openInBrowser(htmlPath: string): Promise<void> {
+export async function openInBrowser(pathOrUrl: string): Promise<void> {
   if (isWsl()) {
     try {
-      const winPath = await toWindowsPath(htmlPath)
-      // Use cmd.exe /c start to open the file in the default Windows browser
-      const proc = Bun.spawn(['cmd.exe', '/c', 'start', '', winPath], {
+      // URLs can be passed directly to cmd.exe start; file paths need wslpath
+      const target = pathOrUrl.startsWith('http') ? pathOrUrl : await toWindowsPath(pathOrUrl)
+      const proc = Bun.spawn(['cmd.exe', '/c', 'start', '', target], {
         stdout: 'ignore',
         stderr: 'ignore',
       })
@@ -34,7 +34,7 @@ export async function openInBrowser(htmlPath: string): Promise<void> {
 
   // Linux / macOS fallback
   const opener = process.platform === 'darwin' ? 'open' : 'xdg-open'
-  const proc = Bun.spawn([opener, htmlPath], {
+  const proc = Bun.spawn([opener, pathOrUrl], {
     stdout: 'ignore',
     stderr: 'ignore',
   })

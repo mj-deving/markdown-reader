@@ -1,6 +1,10 @@
 import { CSS } from './styles'
 
-export function buildHtml(title: string, body: string): string {
+/**
+ * Build a full HTML page from a rendered body.
+ * When injectScript is provided (watch mode), it's inserted before </body>.
+ */
+export function buildHtml(title: string, body: string, injectScript?: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +17,7 @@ export function buildHtml(title: string, body: string): string {
   <article class="prose">
     ${body}
   </article>
+${injectScript ? injectScript : ''}
 </body>
 </html>`
 }
