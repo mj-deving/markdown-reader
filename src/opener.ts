@@ -1,5 +1,3 @@
-import { join } from 'path'
-
 // Detect WSL2 environment
 function isWsl(): boolean {
   return !!process.env.WSL_DISTRO_NAME ||
@@ -16,27 +14,42 @@ async function toWindowsPath(linuxPath: string): Promise<string> {
   return output.trim()
 }
 
+async function tryOpen(command: string, args: string[]): Promise<boolean> {
+  try {
+    const proc = Bun.spawn([command, ...args], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+    })
+    return (await proc.exited) === 0
+  } catch {
+    return false
+  }
+}
+
 export async function openInBrowser(pathOrUrl: string): Promise<void> {
   if (isWsl()) {
-    try {
-      // URLs can be passed directly to cmd.exe start; file paths need wslpath
-      const target = pathOrUrl.startsWith('http') ? pathOrUrl : await toWindowsPath(pathOrUrl)
-      const proc = Bun.spawn(['cmd.exe', '/c', 'start', '', target], {
-        stdout: 'ignore',
-        stderr: 'ignore',
-      })
-      await proc.exited
+    // URLs can be passed directly to cmd.exe start; file paths need wslpath
+    const target = pathOrUrl.startsWith('http') ? pathOrUrl : await toWindowsPath(pathOrUrl)
+
+    // PATH may not include Windows binaries in hardened WSL setups.
+    const cmdCandidates = [
+      'cmd.exe',
+      '/mnt/c/Windows/System32/cmd.exe',
+      '/mnt/c/Windows/Sysnative/cmd.exe',
+    ]
+    for (const cmd of cmdCandidates) {
+      if (await tryOpen(cmd, ['/c', 'start', '', target])) {
+        return
+      }
+    }
+
+    // Some WSL distros provide wslview as a browser bridge.
+    if (await tryOpen('wslview', [pathOrUrl])) {
       return
-    } catch {
-      // Fall through to xdg-open
     }
   }
 
   // Linux / macOS fallback
   const opener = process.platform === 'darwin' ? 'open' : 'xdg-open'
-  const proc = Bun.spawn([opener, pathOrUrl], {
-    stdout: 'ignore',
-    stderr: 'ignore',
-  })
-  await proc.exited
+  await tryOpen(opener, [pathOrUrl])
 }
