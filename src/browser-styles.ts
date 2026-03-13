@@ -89,6 +89,7 @@ const SHELL_CSS = `
 }
 
 /* ── Dark theme (explicit toggle) ────────────────────────────────────────── */
+/* Shell variables */
 html[data-theme="dark"] {
   --canvas-bg: #111113;
   --page-bg: #1a1a1e;
@@ -114,9 +115,49 @@ html[data-theme="dark"] {
   --btt-bg: rgba(30, 30, 34, 0.9);
   --btt-color: #9ca3af;
   --btt-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  /* Prose variables (from styles.ts — which only has @media, not data-theme) */
+  --bg: #1a1b1e;
+  --fg: #e5e7eb;
+  --fg-muted: #9ca3af;
+  --border: #374151;
+  --code-bg: #2d2f36;
+  --code-fg: #e2e8f0;
+  --blockquote-border: #818cf8;
+  --blockquote-bg: #1e1e2e;
+  --link: #818cf8;
+  --link-hover: #a5b4fc;
+  --table-header-bg: #2d2f36;
+  --table-row-alt: #232428;
+  --accent: #818cf8;
 }
 
+/* hljs syntax highlighting — dark (explicit toggle) */
+html[data-theme="dark"] .hljs { color: #e2e8f0; }
+html[data-theme="dark"] .hljs-comment,
+html[data-theme="dark"] .hljs-punctuation { color: #7f848e; }
+html[data-theme="dark"] .hljs-attr,
+html[data-theme="dark"] .hljs-keyword,
+html[data-theme="dark"] .hljs-selector-tag { color: #f97583; }
+html[data-theme="dark"] .hljs-string,
+html[data-theme="dark"] .hljs-attr-value { color: #9ecbff; }
+html[data-theme="dark"] .hljs-number,
+html[data-theme="dark"] .hljs-literal { color: #79b8ff; }
+html[data-theme="dark"] .hljs-title,
+html[data-theme="dark"] .hljs-type { color: #b392f0; }
+html[data-theme="dark"] .hljs-built_in,
+html[data-theme="dark"] .hljs-variable,
+html[data-theme="dark"] .hljs-params { color: #ffab70; }
+html[data-theme="dark"] .hljs-meta { color: #79b8ff; }
+html[data-theme="dark"] .hljs-tag { color: #85e89d; }
+html[data-theme="dark"] .hljs-name,
+html[data-theme="dark"] .hljs-selector-id,
+html[data-theme="dark"] .hljs-selector-class { color: #b392f0; }
+html[data-theme="dark"] .hljs-addition { background: #1a2a1a; color: #85e89d; }
+html[data-theme="dark"] .hljs-deletion { background: #2a1a1a; color: #f97583; }
+
 /* ── Light theme (explicit toggle) ───────────────────────────────────────── */
+/* Shell variables */
 html[data-theme="light"] {
   --canvas-bg: #f4f3f1;
   --page-bg: #ffffff;
@@ -142,7 +183,46 @@ html[data-theme="light"] {
   --btt-bg: rgba(255, 255, 255, 0.9);
   --btt-color: #6b7280;
   --btt-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  /* Prose variables (from styles.ts — which only has @media, not data-theme) */
+  --bg: #ffffff;
+  --fg: #1a1a2e;
+  --fg-muted: #6b7280;
+  --border: #e5e7eb;
+  --code-bg: #f3f4f6;
+  --code-fg: #374151;
+  --blockquote-border: #6366f1;
+  --blockquote-bg: #f5f3ff;
+  --link: #4f46e5;
+  --link-hover: #3730a3;
+  --table-header-bg: #f9fafb;
+  --table-row-alt: #f9fafb;
+  --accent: #6366f1;
 }
+
+/* hljs syntax highlighting — light (explicit toggle) */
+html[data-theme="light"] .hljs { color: #24292e; }
+html[data-theme="light"] .hljs-comment,
+html[data-theme="light"] .hljs-punctuation { color: #6a737d; }
+html[data-theme="light"] .hljs-attr,
+html[data-theme="light"] .hljs-keyword,
+html[data-theme="light"] .hljs-selector-tag { color: #d73a49; }
+html[data-theme="light"] .hljs-string,
+html[data-theme="light"] .hljs-attr-value { color: #032f62; }
+html[data-theme="light"] .hljs-number,
+html[data-theme="light"] .hljs-literal { color: #005cc5; }
+html[data-theme="light"] .hljs-title,
+html[data-theme="light"] .hljs-type { color: #6f42c1; }
+html[data-theme="light"] .hljs-built_in,
+html[data-theme="light"] .hljs-variable,
+html[data-theme="light"] .hljs-params { color: #e36209; }
+html[data-theme="light"] .hljs-meta { color: #005cc5; }
+html[data-theme="light"] .hljs-tag { color: #22863a; }
+html[data-theme="light"] .hljs-name,
+html[data-theme="light"] .hljs-selector-id,
+html[data-theme="light"] .hljs-selector-class { color: #6f42c1; }
+html[data-theme="light"] .hljs-addition { background: #f0fff4; color: #22863a; }
+html[data-theme="light"] .hljs-deletion { background: #ffeef0; color: #b31d28; }
 
 /* ── Body: CSS Grid shell ────────────────────────────────────────────────── */
 body {
