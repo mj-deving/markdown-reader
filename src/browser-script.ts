@@ -1,7 +1,7 @@
 // browser-script.ts — Inline JavaScript for the enhanced browser HTML output
 //
 // Provides: TOC extraction, sidebar rendering, scroll spy, theme toggle,
-// keyboard shortcuts, progress bar, back-to-top button.
+// style preset cycling, keyboard shortcuts, progress bar, back-to-top button.
 //
 // This is exported as a string constant that gets inlined in a <script> tag.
 // Must be vanilla JS (no imports, no TypeScript features at runtime).
@@ -18,12 +18,48 @@ export const BROWSER_SCRIPT = `
   var progressBar = document.getElementById('progress-bar');
   var sidebarToggle = document.getElementById('sidebar-toggle');
   var themeToggle = document.getElementById('theme-toggle');
+  var styleToggle = document.getElementById('style-toggle');
+  var styleLabel = document.getElementById('style-label');
   var backToTop = document.getElementById('back-to-top');
 
   if (!contentEl || !tocSidebar) return;
 
+  // ── Style presets ───────────────────────────────────────────────────────
+  // Must match STYLE_PRESETS in browser-styles.ts
+  var PRESETS = ['default', 'latex', 'mono', 'newspaper'];
+  var PRESET_LABELS = { default: 'Default', latex: 'LaTeX', mono: 'Mono', newspaper: 'News' };
+
+  function getInitialStyle() {
+    // Check localStorage first, then fall back to the body class set by CLI
+    var stored = localStorage.getItem('md-reader-style');
+    if (stored && PRESETS.indexOf(stored) !== -1) return stored;
+    // Read initial style from body class (set by template via --style flag)
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (document.body.classList.contains('style-' + PRESETS[i])) return PRESETS[i];
+    }
+    return 'default';
+  }
+
+  function applyStyle(preset) {
+    // Remove all preset classes
+    PRESETS.forEach(function(p) { document.body.classList.remove('style-' + p); });
+    // Apply new preset
+    document.body.classList.add('style-' + preset);
+    localStorage.setItem('md-reader-style', preset);
+    if (styleLabel) styleLabel.textContent = PRESET_LABELS[preset] || preset;
+  }
+
+  function cycleStyle() {
+    var current = localStorage.getItem('md-reader-style') || 'default';
+    var idx = PRESETS.indexOf(current);
+    var next = PRESETS[(idx + 1) % PRESETS.length];
+    applyStyle(next);
+  }
+
+  // Apply initial style (localStorage overrides CLI default)
+  applyStyle(getInitialStyle());
+
   // ── Theme management ────────────────────────────────────────────────────
-  // Three-state cycle: light → dark → system
   var themeIconLight = document.getElementById('theme-icon-light');
   var themeIconDark = document.getElementById('theme-icon-dark');
   var themeIconSystem = document.getElementById('theme-icon-system');
@@ -76,7 +112,6 @@ export const BROWSER_SCRIPT = `
     // Assign IDs to headings that don't have them
     headings.forEach(function(h, i) {
       if (!h.id) {
-        // Create a slug from heading text, fall back to index
         var slug = h.textContent.trim()
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
@@ -167,7 +202,6 @@ export const BROWSER_SCRIPT = `
         }
       });
 
-      // Pick the heading closest to the top
       var topId = '';
       var topY = Infinity;
       for (var id in visibleHeadings) {
@@ -192,7 +226,6 @@ export const BROWSER_SCRIPT = `
       if (h.id) observer.observe(h);
     });
 
-    // Edge case: highlight first heading for short documents
     if (headings.length > 0 && headings[0].id) {
       requestAnimationFrame(function() {
         if (!currentActive && headings[0].id) setActive(headings[0].id);
@@ -297,6 +330,7 @@ export const BROWSER_SCRIPT = `
   // ── Toolbar event wiring ────────────────────────────────────────────────
   if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
   if (themeToggle) themeToggle.addEventListener('click', cycleTheme);
+  if (styleToggle) styleToggle.addEventListener('click', cycleStyle);
 
   // Set document title in toolbar
   if (docTitle) {

@@ -1,13 +1,22 @@
-// browser-styles.ts — Enhanced browser shell CSS
+// browser-styles.ts — Enhanced browser shell CSS + switchable style presets
 //
-// Adds: sidebar TOC, toolbar, page-on-canvas, LaTeX-like typography,
-// theme toggle, progress bar, responsive layout. Overrides styles.ts
-// via higher specificity (same pattern as Tauri app.css).
+// Structure:
+//   SHELL_CSS   — layout, toolbar, sidebar, TOC, scrollbar, etc. (constant)
+//   PRESET_CSS  — typography presets scoped by body.style-<name> (switchable)
+//   BROWSER_CSS — combined export (SHELL_CSS + PRESET_CSS)
+//
+// Adding a new preset: add a scoped block in PRESET_CSS, then register the
+// name in STYLE_PRESETS and in browser-script.ts's style cycle array.
 //
 // Key constraint: styles.ts is shared with Tauri and must not change.
-// All visual upgrades live here and layer on top.
+// All visual upgrades live here and layer on top via higher specificity.
 
-export const BROWSER_CSS = `
+/** Available style preset names, in cycle order */
+export const STYLE_PRESETS = ['default', 'latex', 'mono', 'newspaper'] as const
+export type StylePreset = (typeof STYLE_PRESETS)[number]
+
+// ── Shell CSS: layout, toolbar, sidebar, shared chrome ────────────────────
+const SHELL_CSS = `
 /* ── CSS Variables ────────────────────────────────────────────────────────── */
 :root {
   --sidebar-width: 260px;
@@ -143,14 +152,9 @@ body {
   min-height: 100vh;
   overflow: hidden;
   background: var(--canvas-bg);
-  /* Override styles.ts body padding */
   padding: 0;
-  /* Override styles.ts font to serif for LaTeX feel */
-  font-family: 'Latin Modern Roman', 'Palatino Linotype', Palatino,
-    'Book Antiqua', Georgia, 'Times New Roman', serif;
 }
 
-/* Sidebar collapsed: content spans full width */
 body.sidebar-collapsed #content {
   grid-column: 1 / -1;
 }
@@ -194,7 +198,6 @@ body.sidebar-collapsed #content {
   color: var(--toc-link-hover);
 }
 
-html[data-theme="dark"] #toolbar button:hover,
 html[data-theme="dark"] #toolbar button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
@@ -203,10 +206,6 @@ html[data-theme="dark"] #toolbar button:hover {
   #toolbar button:hover {
     background: rgba(255, 255, 255, 0.08);
   }
-}
-
-#toolbar button[title]::after {
-  content: none;
 }
 
 #doc-title {
@@ -218,6 +217,18 @@ html[data-theme="dark"] #toolbar button:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: 0.01em;
+}
+
+/* ── Style indicator label (shows current preset name) ───────────────────── */
+#style-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--toolbar-text);
+  opacity: 0.7;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 /* ── Progress Bar ────────────────────────────────────────────────────────── */
@@ -248,7 +259,6 @@ html[data-theme="dark"] #toolbar button:hover {
     'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Sidebar collapse: slide out */
 body.sidebar-collapsed #toc-sidebar {
   transform: translateX(-100%);
   position: absolute;
@@ -266,7 +276,7 @@ body.sidebar-collapsed #toc-sidebar {
   background: var(--canvas-bg);
 }
 
-/* ── Page-on-canvas: article as a "printed page" ─────────────────────────── */
+/* ── Page-on-canvas base: shared across all presets ──────────────────────── */
 #content article.prose {
   max-width: 720px;
   margin: 0 auto;
@@ -275,129 +285,13 @@ body.sidebar-collapsed #toc-sidebar {
   border-radius: 3px;
   padding: 3.5rem 4rem 4.5rem;
   contain: content;
-
-  /* LaTeX-like typography */
-  font-family: inherit;
-  font-size: 18px;
-  line-height: 1.8;
   text-rendering: optimizeLegibility;
-  font-feature-settings: 'liga' 1, 'calt' 1, 'kern' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  hyphens: auto;
-  -webkit-hyphens: auto;
-}
-
-/* ── Heading overrides: LaTeX style (no borders, clean hierarchy) ─────────── */
-#content article.prose h1,
-#content article.prose h2,
-#content article.prose h3,
-#content article.prose h4,
-#content article.prose h5,
-#content article.prose h6 {
-  font-family: inherit;
-  border: none;
-  padding-bottom: 0;
-}
-
-#content article.prose h1 {
-  font-size: 2.2rem;
-  font-weight: 700;
-  margin-top: 0;
-  margin-bottom: 1.2rem;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
-
-#content article.prose h2 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-top: 2.8rem;
-  margin-bottom: 0.8rem;
-  letter-spacing: -0.005em;
-  line-height: 1.25;
-}
-
-#content article.prose h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 2.2rem;
-  margin-bottom: 0.6rem;
-  line-height: 1.3;
-}
-
-#content article.prose h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-top: 1.8rem;
-  margin-bottom: 0.5rem;
-  font-variant: small-caps;
-  text-transform: none;
-  letter-spacing: 0.03em;
-  color: var(--fg);
-}
-
-/* ── Paragraphs ──────────────────────────────────────────────────────────── */
-#content article.prose p {
-  margin-bottom: 1.3rem;
-  text-align: left;
-}
-
-/* ── Links in prose: scholarly style ─────────────────────────────────────── */
-#content article.prose a {
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-  transition: color 0.15s;
-}
-
-/* ── Blockquotes: elegant serif italic ───────────────────────────────────── */
-#content article.prose blockquote {
-  font-style: italic;
-  border-radius: 0;
-  padding: 0.8rem 1.5rem;
-  margin: 1.8rem 0;
-}
-
-/* ── Code blocks: slightly inset from prose ──────────────────────────────── */
-#content article.prose pre {
-  border-radius: 4px;
-  margin: 1.8rem 0;
-}
-
-/* ── Lists ───────────────────────────────────────────────────────────────── */
-#content article.prose ul,
-#content article.prose ol {
-  margin-bottom: 1.3rem;
-}
-
-#content article.prose li {
-  margin-bottom: 0.35rem;
-}
-
-/* ── Tables ──────────────────────────────────────────────────────────────── */
-#content article.prose table {
-  font-size: 0.9rem;
-  border-radius: 4px;
-}
-
-/* ── Horizontal rules: subtle ────────────────────────────────────────────── */
-#content article.prose hr {
-  margin: 3rem auto;
-  max-width: 200px;
-  border-top-color: var(--border);
-}
-
-/* ── Images: centered with subtle frame ──────────────────────────────────── */
-#content article.prose img {
-  display: block;
-  margin: 1.5rem auto;
-  border-radius: 3px;
 }
 
 /* ── TOC styling ─────────────────────────────────────────────────────────── */
-.toc {
-  padding: 0 0.75rem;
-}
+.toc { padding: 0 0.75rem; }
 
 .toc-title {
   font-size: 0.7rem;
@@ -434,14 +328,12 @@ html[data-theme="dark"] .toc-link:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* TOC active state */
 .toc-link.toc-active {
   border-left-color: var(--toc-active-border);
   background: var(--toc-active-bg);
   color: var(--toc-active-color);
 }
 
-/* TOC hierarchy: indent + visual weight per level */
 .toc-level-0 { padding-left: 0.75rem; font-weight: 600; font-size: 0.85rem; }
 .toc-level-1 { padding-left: 1.5rem; font-weight: 500; font-size: 0.84rem; }
 .toc-level-2 { padding-left: 2.25rem; font-weight: 400; font-size: 0.82rem; opacity: 0.8; }
@@ -494,57 +386,29 @@ html[data-theme="dark"] .toc-link:hover {
 
 /* ── Custom scrollbar ────────────────────────────────────────────────────── */
 #content::-webkit-scrollbar,
-#toc-sidebar::-webkit-scrollbar {
-  width: 8px;
-}
+#toc-sidebar::-webkit-scrollbar { width: 8px; }
 
 #content::-webkit-scrollbar-track,
-#toc-sidebar::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-}
+#toc-sidebar::-webkit-scrollbar-track { background: var(--scrollbar-track); }
 
 #content::-webkit-scrollbar-thumb,
-#toc-sidebar::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
-}
+#toc-sidebar::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
 
 #content::-webkit-scrollbar-thumb:hover,
-#toc-sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-}
+#toc-sidebar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-/* ── Focus-visible accessibility ─────────────────────────────────────────── */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
+/* ── Focus-visible ───────────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#toolbar button:focus-visible { outline-offset: -2px; }
+.toc-link:focus-visible { outline-offset: -1px; }
 
-#toolbar button:focus-visible {
-  outline-offset: -2px;
-}
+/* ── MathML ──────────────────────────────────────────────────────────────── */
+math { font-size: 1em; }
+math[display="block"] { display: block; text-align: center; margin: 1.5rem 0; font-size: 1.1em; }
 
-.toc-link:focus-visible {
-  outline-offset: -1px;
-}
-
-/* ── MathML: ensure math elements display correctly ──────────────────────── */
-math {
-  font-size: 1em;
-}
-
-math[display="block"] {
-  display: block;
-  text-align: center;
-  margin: 1.5rem 0;
-  font-size: 1.1em;
-}
-
-/* ── Responsive: sidebar overlay on narrow windows ───────────────────────── */
+/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  body {
-    grid-template-columns: 1fr;
-  }
+  body { grid-template-columns: 1fr; }
 
   #toc-sidebar {
     position: fixed;
@@ -557,42 +421,472 @@ math[display="block"] {
     z-index: 30;
   }
 
-  body.sidebar-open #toc-sidebar {
-    transform: translateX(0);
-  }
-
-  #content {
-    grid-column: 1 / -1;
-  }
-
-  #content article.prose {
-    padding: 2rem 1.5rem 3rem;
-  }
+  body.sidebar-open #toc-sidebar { transform: translateX(0); }
+  #content { grid-column: 1 / -1; }
+  #content article.prose { padding: 2rem 1.5rem 3rem; }
 }
 
-/* ── Print: clean output ─────────────────────────────────────────────────── */
+/* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {
-  body {
-    display: block;
-    background: #fff;
-  }
-
-  #toolbar, #toc-sidebar, #progress-bar, #back-to-top {
-    display: none !important;
-  }
-
-  #content {
-    height: auto;
-    overflow: visible;
-    padding: 0;
-    background: #fff;
-  }
-
-  #content article.prose {
-    max-width: none;
-    box-shadow: none;
-    padding: 0;
-    border-radius: 0;
-  }
+  body { display: block; background: #fff; }
+  #toolbar, #toc-sidebar, #progress-bar, #back-to-top { display: none !important; }
+  #content { height: auto; overflow: visible; padding: 0; background: #fff; }
+  #content article.prose { max-width: none; box-shadow: none; padding: 0; border-radius: 0; }
 }
 `
+
+// ── Style presets: typography + prose styling scoped by body class ─────────
+const PRESET_CSS = `
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRESET: DEFAULT — Clean sans-serif, modern web typography
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.style-default {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter',
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+body.style-default #content article.prose {
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.75;
+  font-feature-settings: 'kern' 1;
+}
+
+body.style-default #content article.prose h1,
+body.style-default #content article.prose h2,
+body.style-default #content article.prose h3,
+body.style-default #content article.prose h4,
+body.style-default #content article.prose h5,
+body.style-default #content article.prose h6 {
+  font-family: inherit;
+}
+
+body.style-default #content article.prose h1 {
+  font-size: 2.1rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.4rem;
+  line-height: 1.3;
+}
+
+body.style-default #content article.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+  line-height: 1.3;
+}
+
+body.style-default #content article.prose h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+body.style-default #content article.prose h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+body.style-default #content article.prose p {
+  margin-bottom: 1.25rem;
+}
+
+body.style-default #content article.prose a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+body.style-default #content article.prose blockquote {
+  border-radius: 0 6px 6px 0;
+}
+
+body.style-default #content article.prose pre {
+  border-radius: 8px;
+}
+
+body.style-default #content article.prose hr {
+  margin: 2.5rem 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRESET: LATEX — Academic serif typography, LaTeX-inspired
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.style-latex {
+  font-family: 'Latin Modern Roman', 'Palatino Linotype', Palatino,
+    'Book Antiqua', Georgia, 'Times New Roman', serif;
+}
+
+body.style-latex #content article.prose {
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1.8;
+  font-feature-settings: 'liga' 1, 'calt' 1, 'kern' 1;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+body.style-latex #content article.prose h1,
+body.style-latex #content article.prose h2,
+body.style-latex #content article.prose h3,
+body.style-latex #content article.prose h4,
+body.style-latex #content article.prose h5,
+body.style-latex #content article.prose h6 {
+  font-family: inherit;
+  border: none;
+  padding-bottom: 0;
+}
+
+body.style-latex #content article.prose h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+body.style-latex #content article.prose h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 2.8rem;
+  margin-bottom: 0.8rem;
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+
+body.style-latex #content article.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2.2rem;
+  margin-bottom: 0.6rem;
+  line-height: 1.3;
+}
+
+body.style-latex #content article.prose h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.8rem;
+  margin-bottom: 0.5rem;
+  font-variant: small-caps;
+  text-transform: none;
+  letter-spacing: 0.03em;
+  color: var(--fg);
+}
+
+body.style-latex #content article.prose p {
+  margin-bottom: 1.3rem;
+}
+
+body.style-latex #content article.prose a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+body.style-latex #content article.prose blockquote {
+  font-style: italic;
+  border-radius: 0;
+  padding: 0.8rem 1.5rem;
+  margin: 1.8rem 0;
+}
+
+body.style-latex #content article.prose pre {
+  border-radius: 4px;
+  margin: 1.8rem 0;
+}
+
+body.style-latex #content article.prose table {
+  font-size: 0.9rem;
+  border-radius: 4px;
+}
+
+body.style-latex #content article.prose hr {
+  margin: 3rem auto;
+  max-width: 200px;
+}
+
+body.style-latex #content article.prose img {
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRESET: MONO — Terminal/hacker aesthetic, monospace-forward
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.style-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code',
+    'SF Mono', Menlo, Consolas, monospace;
+}
+
+body.style-mono #content article.prose {
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  max-width: 760px;
+  padding: 2.5rem 3rem 3.5rem;
+}
+
+body.style-mono #content article.prose h1,
+body.style-mono #content article.prose h2,
+body.style-mono #content article.prose h3,
+body.style-mono #content article.prose h4,
+body.style-mono #content article.prose h5,
+body.style-mono #content article.prose h6 {
+  font-family: inherit;
+  border: none;
+  padding-bottom: 0;
+  letter-spacing: -0.02em;
+}
+
+body.style-mono #content article.prose h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  line-height: 1.25;
+}
+
+body.style-mono #content article.prose h1::before {
+  content: '# ';
+  color: var(--accent);
+  font-weight: 400;
+}
+
+body.style-mono #content article.prose h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 0.7rem;
+  line-height: 1.3;
+}
+
+body.style-mono #content article.prose h2::before {
+  content: '## ';
+  color: var(--accent);
+  font-weight: 400;
+}
+
+body.style-mono #content article.prose h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+body.style-mono #content article.prose h3::before {
+  content: '### ';
+  color: var(--accent);
+  font-weight: 400;
+}
+
+body.style-mono #content article.prose h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body.style-mono #content article.prose p {
+  margin-bottom: 1.1rem;
+}
+
+body.style-mono #content article.prose a {
+  text-decoration: none;
+  border-bottom: 1px dashed var(--link);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+body.style-mono #content article.prose a:hover {
+  border-bottom-style: solid;
+}
+
+body.style-mono #content article.prose blockquote {
+  border-left-width: 3px;
+  border-radius: 0;
+  font-style: normal;
+  padding: 0.6rem 1.2rem;
+  margin: 1.5rem 0;
+}
+
+body.style-mono #content article.prose code:not(pre code) {
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+body.style-mono #content article.prose pre {
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+body.style-mono #content article.prose table {
+  font-size: 0.88rem;
+  border-radius: 3px;
+}
+
+body.style-mono #content article.prose hr {
+  margin: 2rem 0;
+  border-top-style: dashed;
+}
+
+body.style-mono #content article.prose img {
+  display: block;
+  margin: 1.2rem auto;
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRESET: NEWSPAPER — Classic editorial print typography
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.style-newspaper {
+  font-family: Georgia, 'Times New Roman', 'Noto Serif', 'DejaVu Serif', serif;
+}
+
+body.style-newspaper #content article.prose {
+  font-family: inherit;
+  font-size: 17.5px;
+  line-height: 1.7;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  max-width: 680px;
+}
+
+/* Drop cap on the first paragraph after h1 */
+body.style-newspaper #content article.prose h1 + p::first-letter {
+  float: left;
+  font-size: 3.6em;
+  line-height: 0.8;
+  padding-right: 0.08em;
+  margin-top: 0.05em;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+body.style-newspaper #content article.prose h1,
+body.style-newspaper #content article.prose h2,
+body.style-newspaper #content article.prose h3,
+body.style-newspaper #content article.prose h4,
+body.style-newspaper #content article.prose h5,
+body.style-newspaper #content article.prose h6 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter',
+    'Helvetica Neue', Arial, sans-serif;
+  border: none;
+  padding-bottom: 0;
+}
+
+body.style-newspaper #content article.prose h1 {
+  font-size: 2.4rem;
+  font-weight: 900;
+  margin-top: 0;
+  margin-bottom: 0.3rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* Byline / subtitle feel: muted text under h1 */
+body.style-newspaper #content article.prose h1 + p:not(:first-letter) {
+  /* the drop cap paragraph still starts normally */
+}
+
+body.style-newspaper #content article.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-top: 2.5rem;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  border-bottom: 3px solid var(--fg);
+  padding-bottom: 0.2rem;
+}
+
+body.style-newspaper #content article.prose h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+body.style-newspaper #content article.prose h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+  font-style: italic;
+  color: var(--fg);
+}
+
+body.style-newspaper #content article.prose p {
+  margin-bottom: 1.1rem;
+}
+
+body.style-newspaper #content article.prose a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+body.style-newspaper #content article.prose blockquote {
+  border-left-width: 3px;
+  border-left-color: var(--fg);
+  border-radius: 0;
+  background: transparent;
+  font-style: italic;
+  font-size: 1.1em;
+  padding: 0.5rem 1.5rem;
+  margin: 2rem 0;
+  color: var(--fg);
+}
+
+body.style-newspaper #content article.prose pre {
+  border-radius: 0;
+  margin: 1.5rem 0;
+}
+
+body.style-newspaper #content article.prose table {
+  font-size: 0.88rem;
+  border-radius: 0;
+}
+
+body.style-newspaper #content article.prose hr {
+  margin: 2.5rem auto;
+  max-width: 120px;
+  border-top: 2px solid var(--fg);
+}
+
+body.style-newspaper #content article.prose img {
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 0;
+}
+
+/* ── Smooth transition when switching presets ─────────────────────────────── */
+#content article.prose {
+  transition: font-size 0.3s ease, line-height 0.3s ease;
+}
+`
+
+/** Combined CSS: shell + all presets */
+export const BROWSER_CSS = SHELL_CSS + PRESET_CSS

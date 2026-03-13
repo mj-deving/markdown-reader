@@ -1,6 +1,7 @@
 import { watch } from 'fs'
 import { convertMarkdown, extractTitle } from './converter'
 import { buildHtml } from './template'
+import type { StylePreset } from './browser-styles'
 import { openInBrowser } from './opener'
 import { basename, resolve } from 'path'
 import type { Server, ServerWebSocket } from 'bun'
@@ -29,12 +30,12 @@ const RELOAD_SCRIPT = `
  * - On change: re-converts and notifies all connected browsers to reload
  * - Ctrl+C gracefully shuts everything down
  */
-export async function startWatchMode(inputFile: string): Promise<void> {
+export async function startWatchMode(inputFile: string, style: StylePreset = 'default'): Promise<void> {
   const absPath = resolve(inputFile)
   const titleFallback = basename(inputFile, '.md')
 
   // ── Initial conversion ───────────────────────────────────────────────────
-  let currentHtml = await convert(absPath, titleFallback)
+  let currentHtml = await convert(absPath, titleFallback, style)
 
   // ── Track connected WebSocket clients ────────────────────────────────────
   const clients = new Set<ServerWebSocket<unknown>>()
@@ -88,7 +89,7 @@ export async function startWatchMode(inputFile: string): Promise<void> {
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(async () => {
       try {
-        currentHtml = await convert(absPath, titleFallback)
+        currentHtml = await convert(absPath, titleFallback, style)
         const timestamp = new Date().toLocaleTimeString()
         console.log(`  ${timestamp}  re-converted`)
 
@@ -117,9 +118,9 @@ export async function startWatchMode(inputFile: string): Promise<void> {
 }
 
 // ── Helper: read file and convert to full HTML with reload script ───────────
-async function convert(absPath: string, titleFallback: string): Promise<string> {
+async function convert(absPath: string, titleFallback: string, style: StylePreset = 'default'): Promise<string> {
   const markdown = await Bun.file(absPath).text()
   const title = extractTitle(markdown, titleFallback)
   const body = await convertMarkdown(markdown)
-  return buildHtml(title, body, RELOAD_SCRIPT)
+  return buildHtml(title, body, { style, injectScript: RELOAD_SCRIPT })
 }

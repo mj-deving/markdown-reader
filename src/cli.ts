@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
 import { convertMarkdown, extractTitle } from './converter'
 import { buildHtml } from './template'
+import { STYLE_PRESETS, type StylePreset } from './browser-styles'
 import { openInBrowser } from './opener'
 import { startWatchMode } from './watcher'
 import { findBrowser, exportPdf } from './pdf'
 import { join, basename, extname, dirname, resolve } from 'path'
 
-const VERSION = '0.2.0'
+const VERSION = '0.3.0'
 
 const HELP = `
 md-reader — Render markdown as a beautiful HTML reading experience
@@ -18,6 +19,7 @@ Options:
   --watch, -w       Watch for changes and live-reload in browser
   --pdf             Export as PDF (requires Chrome, Edge, or Chromium)
   --output <path>   Save HTML/PDF to a specific path
+  --style <name>    Set reading style: default, latex, mono, newspaper
   --no-open         Convert but don't open in browser
   --version         Show version
   --help            Show this help
@@ -25,6 +27,7 @@ Options:
 Examples:
   md-reader README.md
   md-reader README.md --watch
+  md-reader README.md --style latex
   md-reader README.md --pdf
   md-reader README.md --pdf --output ~/Desktop/readme.pdf
   md-reader docs/guide.md --no-open
@@ -56,8 +59,25 @@ if (outputIdx !== -1) {
   }
 }
 
-// First non-flag argument is the input file
-const inputFile = args.find(a => !a.startsWith('--') && !a.startsWith('-w') && a !== outputPath)
+// Parse --style flag
+const styleIdx = args.indexOf('--style')
+let style: StylePreset = 'default'
+if (styleIdx !== -1) {
+  const styleArg = args[styleIdx + 1]
+  if (!styleArg || styleArg.startsWith('--')) {
+    console.error('Error: --style requires a name: default, latex, mono, newspaper')
+    process.exit(1)
+  }
+  if (!STYLE_PRESETS.includes(styleArg as StylePreset)) {
+    console.error(`Error: Unknown style "${styleArg}". Available: ${STYLE_PRESETS.join(', ')}`)
+    process.exit(1)
+  }
+  style = styleArg as StylePreset
+}
+
+// First non-flag argument is the input file (skip values for --output and --style)
+const flagValues = new Set([outputPath, style !== 'default' ? args[styleIdx + 1] : null].filter(Boolean))
+const inputFile = args.find(a => !a.startsWith('--') && !a.startsWith('-w') && !flagValues.has(a))
 
 if (!inputFile) {
   console.error('Error: No input file specified\n\nRun `md-reader --help` for usage.')
@@ -78,7 +98,7 @@ if (!(await file.exists())) {
 
 // ── Watch mode: serve with live-reload ────────────────────────────────────────
 if (watchMode) {
-  await startWatchMode(inputFile)
+  await startWatchMode(inputFile, style)
 } else {
   // ── Convert markdown to HTML ──────────────────────────────────────────────
   const markdown = await file.text()
@@ -86,7 +106,7 @@ if (watchMode) {
   const title = extractTitle(markdown, titleFallback)
 
   const htmlBody = await convertMarkdown(markdown)
-  const fullHtml = buildHtml(title, htmlBody)
+  const fullHtml = buildHtml(title, htmlBody, { style })
 
   if (pdfMode) {
     // ── PDF export mode ───────────────────────────────────────────────────
