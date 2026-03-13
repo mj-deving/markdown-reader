@@ -72,6 +72,24 @@ md-reader README.md --no-open
 2. Run: `bun run src/cli.ts README.md`
 3. Global: `bun link` then `md-reader file.md`
 
+## Math
+
+Inline math: The quadratic formula is $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$.
+
+Display math (block):
+
+$$
+\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+$$
+
+Euler's identity: $e^{i\pi} + 1 = 0$
+
+A matrix:
+
+$$
+\mathbf{A} = \begin{pmatrix} a & b \\ c & d \end{pmatrix}
+$$
+
 ## Horizontal Rule
 
 ---
