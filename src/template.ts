@@ -9,6 +9,7 @@ const ICON_THEME_LIGHT = '<svg width="16" height="16" viewBox="0 0 16 16" fill="
 const ICON_THEME_DARK = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 9.5a5.5 5.5 0 1 1-7-7 4.5 4.5 0 0 0 7 7z"/></svg>'
 const ICON_THEME_SYSTEM = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="8" rx="1.5"/><line x1="5" y1="13" x2="11" y2="13"/><line x1="8" y1="11" x2="8" y2="13"/></svg>'
 const ICON_BACK_TO_TOP = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="13" x2="8" y2="4"/><polyline points="4,7 8,3 12,7"/></svg>'
+const ICON_PDF = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h5.5L13 4.5V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><polyline points="9,1 9,5 13,5"/><text x="4.5" y="12" font-size="5.5" font-weight="700" font-family="sans-serif" fill="currentColor" stroke="none">PDF</text></svg>'
 
 // Mermaid diagram rendering — CDN script + initialization
 // Only included when mermaid code blocks are detected in the rendered HTML.
@@ -118,6 +119,7 @@ export function buildHtml(
       <span id="theme-icon-dark" style="display:none">${ICON_THEME_DARK}</span>
       <span id="theme-icon-system">${ICON_THEME_SYSTEM}</span>
     </button>
+    <button id="pdf-export" title="Export as PDF (Ctrl+P)" aria-label="Export as PDF">${ICON_PDF}</button>
     <div id="progress-bar"></div>
   </div>
 

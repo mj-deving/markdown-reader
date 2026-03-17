@@ -327,6 +327,12 @@ export const BROWSER_SCRIPT = `
     }
   });
 
+  // ── PDF export ────────────────────────────────────────────────────────
+  var pdfExport = document.getElementById('pdf-export');
+  if (pdfExport) {
+    pdfExport.addEventListener('click', function() { window.print(); });
+  }
+
   // ── Toolbar event wiring ────────────────────────────────────────────────
   if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
   if (themeToggle) themeToggle.addEventListener('click', cycleTheme);
