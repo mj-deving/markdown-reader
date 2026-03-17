@@ -90,6 +90,33 @@ $$
 \mathbf{A} = \begin{pmatrix} a & b \\ c & d \end{pmatrix}
 $$
 
+## Mermaid Diagrams
+
+Flowchart:
+
+```mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Do something]
+    B -->|No| D[Do something else]
+    C --> E[End]
+    D --> E
+```
+
+Sequence diagram:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as CLI
+    participant R as Renderer
+    U->>C: md-reader file.md
+    C->>R: convertMarkdown()
+    R-->>C: HTML body
+    C->>C: buildHtml()
+    C-->>U: Open in browser
+```
+
 ## Horizontal Rule
 
 ---
