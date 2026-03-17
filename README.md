@@ -2,23 +2,22 @@
 
 CLI tool and desktop app that renders markdown files as a beautiful HTML reading experience.
 
-Dark/light theme, GitHub Flavored Markdown, syntax highlighting, live reload, PDF export — all self-contained with zero external requests.
+GitHub-style rendering, dark/light theme, switchable style presets, syntax highlighting, math support, live reload, PDF export — all self-contained with zero external requests.
 
 ## Features
 
+- **GitHub-style default** — renders markdown with GitHub's color palette, typography, and spacing
+- **4 style presets** — Default (GitHub), LaTeX, Mono, Newspaper — cycle with toolbar button or `localStorage`
 - **Self-contained HTML** — all CSS inlined, no external dependencies
-- **Dark and light themes** — follows your system preference
+- **Dark and light themes** — follows system preference, or toggle light / dark / system
 - **GitHub Flavored Markdown** — tables, task lists, strikethrough, autolinks
-- **Syntax highlighting** — via highlight.js with theme-matched colors
+- **Math rendering** — KaTeX MathML output (zero CSS/fonts, works in modern browsers)
+- **Syntax highlighting** — via highlight.js with GitHub Light/Dark color schemes
+- **Interactive sidebar** — auto-generated TOC with scroll spy, collapsible
 - **Live reload** — `--watch` mode with WebSocket hot-refresh
 - **PDF export** — `--pdf` via headless Chrome/Edge/Chromium
-- **Desktop app** — native Tauri window with polished PDF-reader-quality experience:
-  - **Toolbar** — sidebar toggle, filename display, theme switch, reading progress bar
-  - **Page-on-canvas design** — elevated page surface with warm canvas background
-  - **Scroll spy TOC** — IntersectionObserver-based active heading tracking
-  - **Theme toggle** — three-state cycle (light / dark / system) with persistence
-  - **Keyboard navigation** — `j`/`k` scroll, `Space`/`Shift+Space` page, `Ctrl+B` sidebar
-  - **Smooth transitions** — fade animations on live-reload with scroll position preservation
+- **Desktop app** — native Tauri v2 window with file watching and smooth transitions
+- **Keyboard navigation** — `j`/`k` scroll, `Space`/`Shift+Space` page, `Home`/`End`, `Ctrl+B` sidebar
 - **OS integration** — right-click "Open with" on Windows and Linux
 
 ## Installation
@@ -86,6 +85,7 @@ md-reader <file.md> [options]
 | Flag | Description |
 |------|-------------|
 | `--watch`, `-w` | Watch for changes and live-reload in browser |
+| `--style <name>` | Set initial style preset: `default`, `latex`, `mono`, `newspaper` |
 | `--pdf` | Export as PDF (requires Chrome, Edge, or Chromium) |
 | `--output <path>` | Save HTML/PDF to a specific path |
 | `--no-open` | Convert but don't open in browser |
@@ -100,6 +100,9 @@ md-reader README.md
 
 # Live-reload while editing
 md-reader README.md --watch
+
+# Use LaTeX-style typography
+md-reader README.md --style latex
 
 # Export to PDF
 md-reader README.md --pdf
@@ -138,7 +141,7 @@ npx tauri dev -- -- ../README.md
 ## Tech Stack
 
 - **Runtime:** Bun + TypeScript
-- **Markdown:** unified + remark-parse + remark-gfm + remark-rehype + rehype-sanitize + rehype-highlight + rehype-stringify
+- **Markdown:** unified + remark-parse + remark-gfm + remark-math + remark-rehype + rehype-katex (MathML) + rehype-sanitize + rehype-highlight + rehype-stringify
 - **Desktop:** Tauri v2 (Rust backend + WebView frontend)
 - **CI/CD:** GitHub Actions — tag push triggers cross-platform release builds
 

@@ -11,7 +11,7 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 ## Tech Stack
 
 - **Runtime:** Bun 1.3.9 + TypeScript
-- **Markdown pipeline:** unified + remark-parse + remark-gfm + remark-rehype + rehype-sanitize + rehype-highlight + rehype-stringify
+- **Markdown pipeline:** unified + remark-parse + remark-gfm + remark-math + remark-rehype + rehype-katex (MathML) + rehype-sanitize + rehype-highlight + rehype-stringify
 - **Desktop:** Tauri v2 (Rust backend + WebView frontend)
 - **Output:** Self-contained HTML (all CSS inlined, zero external requests)
 - **Global binary:** `~/.bun/bin/md-reader` (via `bun link`)
@@ -43,8 +43,10 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 ├── src/
 │   ├── cli.ts               # Entry point: arg parsing, orchestration
 │   ├── converter.ts         # unified markdown → HTML body pipeline (shared with Tauri)
-│   ├── template.ts          # Wraps body in full HTML page
-│   ├── styles.ts            # Self-contained CSS (dark/light, hljs themes)
+│   ├── template.ts          # Enhanced HTML page with sidebar, toolbar, style presets
+│   ├── styles.ts            # Base prose CSS (dark/light, hljs themes) — shared with Tauri
+│   ├── browser-styles.ts    # Browser shell CSS + 4 style presets (Default/LaTeX/Mono/Newspaper)
+│   ├── browser-script.ts    # Inline JS: TOC, scroll spy, theme/style cycling, keyboard nav
 │   ├── watcher.ts           # --watch live-reload server (Bun.serve + WebSocket)
 │   ├── pdf.ts               # --pdf export via headless Chrome/Edge/Chromium
 │   └── opener.ts            # WSL2-aware browser opener (cmd.exe + wslpath)
@@ -71,7 +73,7 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 
 ## Security
 
-- `rehype-sanitize` strips dangerous HTML (custom schema preserves className for syntax highlighting)
+- `rehype-sanitize` strips dangerous HTML (custom schema preserves className + MathML elements/attributes)
 - CI actions SHA-pinned (not mutable tag refs)
 - Tauri CSP: `script-src 'self'`, empty capabilities (minimal permissions)
 - Watch mode validates Host header (DNS rebinding protection)
@@ -80,13 +82,14 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 
 ## Current State
 
-**Status:** v1.0.0 shipped — UX overhaul implemented, pending runtime test
-**Last session:** 2026-02-20 — UX overhaul implemented (toolbar, theme, scroll spy, keyboard nav)
+**Status:** v0.3.0 — Enhanced HTML output with interactive TOC, 4 style presets, math rendering
+**Last session:** 2026-03-13 — HTML browser output upgrade (sidebar, styles, math, dark mode fix)
 
 **Usage:**
 ```bash
 md-reader README.md              # convert + open in browser
 md-reader README.md --watch      # live-reload in browser
+md-reader README.md --style latex # set initial style preset
 md-reader README.md --pdf        # export as PDF
 md-reader file.md --no-open      # convert only, print path
 md-reader file.md --output ~/Desktop/out.html
@@ -96,8 +99,9 @@ md-reader file.md --output ~/Desktop/out.html
 
 ## Open Items
 
-- [x] Implement UX overhaul (plan at `tauri-app/Plans/drifting-beaming-planet.md`)
-- [ ] Runtime test UX overhaul, then tag v1.1.0
+- [ ] `--latex-font` flag for embedded Latin Modern font
 - [ ] Design proper app icons (currently solid-color placeholders)
+- [ ] Port style presets to Tauri desktop app
 - [ ] Consider code signing for future releases (SmartScreen)
 - [ ] Tauri auto-update plugin for future versions
+- [ ] Add find-in-page (Ctrl+F), zoom controls (Ctrl+/-)
