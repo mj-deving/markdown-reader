@@ -39,6 +39,29 @@ async function setupLinux(): Promise<void> {
     mkdirSync(appsDir, { recursive: true })
   }
 
+  // Install the app icon to XDG icon directories
+  const iconSource = join(INTEGRATIONS_DIR, 'linux', 'md-reader.png')
+  if (existsSync(iconSource)) {
+    const iconSizes = [
+      { size: '128x128', dir: join(process.env.HOME ?? '~', '.local', 'share', 'icons', 'hicolor', '128x128', 'apps') },
+    ]
+    for (const { dir } of iconSizes) {
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+      const target = join(dir, 'md-reader.png')
+      const data = await Bun.file(iconSource).arrayBuffer()
+      await Bun.write(target, data)
+    }
+    // Also install SVG if available
+    const svgSource = join(PROJECT_ROOT, 'tauri-app', 'src-tauri', 'icons', 'icon.svg')
+    if (existsSync(svgSource)) {
+      const svgDir = join(process.env.HOME ?? '~', '.local', 'share', 'icons', 'hicolor', 'scalable', 'apps')
+      if (!existsSync(svgDir)) mkdirSync(svgDir, { recursive: true })
+      const data = await Bun.file(svgSource).arrayBuffer()
+      await Bun.write(join(svgDir, 'md-reader.svg'), data)
+    }
+    console.log('  Installed icon: md-reader')
+  }
+
   // Update the Exec line to use the current bun and cli.ts paths
   const bunPath = process.argv[0]
   const cliPath = join(import.meta.dir, 'cli.ts')

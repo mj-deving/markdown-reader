@@ -41,6 +41,29 @@ $appKey = "$progIdKey\Application"
 New-Item -Path $appKey -Force | Out-Null
 Set-ItemProperty -Path $appKey -Name "ApplicationName" -Value $AppName
 
+# ── Set application icon ─────────────────────────────────────────────────────
+# Copy icon.ico to install directory and register as DefaultIcon
+$IconSource = Join-Path $PSScriptRoot "..\..\tauri-app\src-tauri\icons\icon.ico"
+if (-not (Test-Path $IconSource)) {
+    # Fallback: look for icon next to this script
+    $IconSource = Join-Path $PSScriptRoot "icon.ico"
+}
+if (Test-Path $IconSource) {
+    $IconTarget = Join-Path $InstallDir "md-reader.ico"
+    Copy-Item -Path $IconSource -Destination $IconTarget -Force
+    Write-Host "Copied icon: $IconTarget"
+
+    # DefaultIcon for the ProgID — shown in Explorer for .md files
+    $iconKey = "$progIdKey\DefaultIcon"
+    New-Item -Path $iconKey -Force | Out-Null
+    Set-ItemProperty -Path $iconKey -Name "(Default)" -Value "`"$IconTarget`""
+
+    # ApplicationIcon shown in "Open with" dialog
+    Set-ItemProperty -Path $appKey -Name "ApplicationIcon" -Value "`"$IconTarget`""
+} else {
+    Write-Host "Warning: icon.ico not found, skipping icon registration" -ForegroundColor Yellow
+}
+
 # ── Associate .md extension with our ProgID ───────────────────────────────────
 # HKCU:\Software\Classes\.md
 $extKey = "HKCU:\Software\Classes\.md"

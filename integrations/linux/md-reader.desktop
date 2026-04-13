@@ -16,4 +16,4 @@ Exec=/home/mj/.bun/bin/bun /home/mj/projects/markdown-reader/src/cli.ts %f
 MimeType=text/markdown;text/x-markdown;
 Terminal=false
 Categories=Utility;TextEditor;
-Icon=text-x-markdown
+Icon=md-reader
