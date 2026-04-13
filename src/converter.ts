@@ -3,6 +3,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import remarkRehype from 'remark-rehype'
+import rehypeSlug from 'rehype-slug'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
@@ -20,9 +21,14 @@ const sanitizeSchema = {
 }
 
 // Sanitization schema for math-enabled pipeline — allows KaTeX/MathML output
-// through the sanitizer (math elements, attributes, namespaces)
+// through the sanitizer (math elements, attributes, namespaces).
+// Also allows id attributes for rehype-slug heading anchors, and disables
+// the default clobber prefix so anchor links (#slug) match heading IDs.
 const mathSanitizeSchema = {
   ...sanitizeSchema,
+  // Don't prefix id attributes — anchor links must match heading slugs exactly
+  clobberPrefix: '',
+  clobber: [],
   tagNames: [
     ...(defaultSchema.tagNames ?? []),
     // MathML elements
@@ -36,6 +42,8 @@ const mathSanitizeSchema = {
   ],
   attributes: {
     ...sanitizeSchema.attributes,
+    // Allow id attributes on headings (rehype-slug adds them for anchor navigation)
+    h1: ['id'], h2: ['id'], h3: ['id'], h4: ['id'], h5: ['id'], h6: ['id'],
     math: ['xmlns', 'display', 'alttext'],
     mrow: [],
     mi: ['mathvariant'],
@@ -70,6 +78,7 @@ const mathSanitizeSchema = {
  * Convert markdown to HTML body string.
  * Supports GFM (tables, strikethrough, etc.) and LaTeX math ($...$, $$...$$).
  * Math is rendered as MathML for self-contained output (no external CSS/fonts).
+ * Headings get slug-based id attributes for anchor link navigation.
  */
 export async function convertMarkdown(markdown: string): Promise<string> {
   const result = await unified()
@@ -78,6 +87,7 @@ export async function convertMarkdown(markdown: string): Promise<string> {
     .use(remarkMath)
     .use(remarkRehype)
     .use(rehypeKatex, { output: 'mathml' })
+    .use(rehypeSlug)
     .use(rehypeSanitize, mathSanitizeSchema)
     .use(rehypeHighlight)
     .use(rehypeStringify)

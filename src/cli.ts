@@ -5,15 +5,17 @@ import { STYLE_PRESETS, type StylePreset } from './browser-styles'
 import { openInBrowser } from './opener'
 import { startWatchMode } from './watcher'
 import { findBrowser, exportPdf } from './pdf'
+import { setDefault } from './set-default'
 import { join, basename, extname, dirname, resolve } from 'path'
 
-const VERSION = '0.3.0'
+const VERSION = '0.4.0'
 
 const HELP = `
 md-reader — Render markdown as a beautiful HTML reading experience
 
 Usage:
   md-reader <file.md> [options]
+  md-reader --set-default
 
 Options:
   --watch, -w       Watch for changes and live-reload in browser
@@ -21,6 +23,7 @@ Options:
   --output <path>   Save HTML/PDF to a specific path
   --style <name>    Set reading style: default, latex, mono, newspaper
   --no-open         Convert but don't open in browser
+  --set-default     Register md-reader as the default app for .md files
   --version         Show version
   --help            Show this help
 
@@ -31,6 +34,7 @@ Examples:
   md-reader README.md --pdf
   md-reader README.md --pdf --output ~/Desktop/readme.pdf
   md-reader docs/guide.md --no-open
+  md-reader --set-default
 `.trim()
 
 // ── Arg parsing ───────────────────────────────────────────────────────────────
@@ -43,6 +47,11 @@ if (args.includes('--help') || args.includes('-h')) {
 
 if (args.includes('--version')) {
   console.log(`md-reader v${VERSION}`)
+  process.exit(0)
+}
+
+if (args.includes('--set-default')) {
+  await setDefault()
   process.exit(0)
 }
 
@@ -136,8 +145,12 @@ if (watchMode) {
     }
   } else {
     // ── HTML output mode ────────────────────────────────────────────────
+    const outDir = outputPath ? dirname(resolve(outputPath)) : '/tmp'
     const outFile = outputPath ?? join('/tmp', `md-reader-${titleFallback}-${Date.now()}.html`)
-    await Bun.write(outFile, fullHtml)
+
+    // Pre-convert linked .md files and rewrite hrefs in the HTML
+    const rewrittenHtml = await convertLinkedFiles(fullHtml, resolve(inputFile), outDir, style)
+    await Bun.write(outFile, rewrittenHtml)
 
     console.log(`→ ${outFile}`)
 
@@ -145,4 +158,67 @@ if (watchMode) {
       await openInBrowser(outFile)
     }
   }
+}
+
+// ── Linked .md file conversion for static HTML mode ───────────────────────────
+// Scans rendered HTML for relative .md links, converts each linked file to HTML,
+// writes them alongside the output, and rewrites hrefs to point to the HTML files.
+// One level deep only — linked files' own .md links are not recursively followed.
+async function convertLinkedFiles(
+  html: string,
+  sourceAbsPath: string,
+  outDir: string,
+  style: StylePreset,
+): Promise<string> {
+  const sourceDir = dirname(sourceAbsPath)
+  const mdLinkRegex = /(<a\s[^>]*href=")([^"]*\.md)(#[^"]*)?(")/g
+  const visited = new Set<string>([sourceAbsPath]) // cycle detection
+
+  // Collect unique .md links
+  const links: Array<{ relPath: string; absPath: string }> = []
+  let match: RegExpExecArray | null
+  while ((match = mdLinkRegex.exec(html)) !== null) {
+    const relPath = match[2]
+    if (relPath.match(/^https?:\/\//)) continue
+    const absLinkedPath = resolve(sourceDir, relPath)
+    // Path traversal guard — only allow files within the source directory tree
+    if (!absLinkedPath.startsWith(sourceDir + '/')) continue
+    if (visited.has(absLinkedPath)) continue
+    visited.add(absLinkedPath)
+    links.push({ relPath, absPath: absLinkedPath })
+  }
+
+  // Convert linked files in parallel
+  const timestamp = Date.now()
+  const rewrites = new Map<string, string>()
+  await Promise.all(links.map(async (link) => {
+    try {
+      const file = Bun.file(link.absPath)
+      if (!(await file.exists())) {
+        console.error(`  warning: linked file not found: ${link.relPath}`)
+        return
+      }
+      const markdown = await file.text()
+      const title = extractTitle(markdown, basename(link.relPath, '.md'))
+      const body = await convertMarkdown(markdown)
+      const linkedHtml = buildHtml(title, body, { style })
+
+      const outName = `md-reader-${basename(link.relPath, '.md')}-${timestamp}.html`
+      const outPath = join(outDir, outName)
+      await Bun.write(outPath, linkedHtml)
+      rewrites.set(link.relPath, outName)
+    } catch (err) {
+      console.error(`  warning: failed to convert ${link.relPath}: ${err}`)
+    }
+  }))
+
+  if (rewrites.size === 0) return html
+
+  // Single-pass rewrite of .md hrefs to generated HTML filenames
+  return html.replace(mdLinkRegex, (full, prefix, relPath, anchor, suffix) => {
+    const outName = rewrites.get(relPath)
+    if (!outName) return full
+    const newHref = outDir === '/tmp' ? `/tmp/${outName}` : outName
+    return `${prefix}${newHref}${anchor || ''}${suffix}`
+  })
 }

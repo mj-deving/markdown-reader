@@ -49,7 +49,8 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 │   ├── browser-script.ts    # Inline JS: TOC, scroll spy, theme/style cycling, keyboard nav
 │   ├── watcher.ts           # --watch live-reload server (Bun.serve + WebSocket)
 │   ├── pdf.ts               # --pdf export via headless Chrome/Edge/Chromium
-│   └── opener.ts            # WSL2-aware browser opener (cmd.exe + wslpath)
+│   ├── opener.ts            # WSL2-aware browser opener (cmd.exe + wslpath)
+│   └── set-default.ts       # --set-default: register as default .md handler
 ├── tauri-app/               # Tauri v2 desktop application
 │   ├── src/                 # Frontend TypeScript (runs in WebView)
 │   │   ├── main.ts          # Orchestrator: receives markdown, renders, manages TOC
@@ -82,8 +83,8 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 
 ## Current State
 
-**Status:** v0.3.0 — Enhanced HTML output with interactive TOC, 4 style presets, math rendering
-**Last session:** 2026-03-13 — HTML browser output upgrade (sidebar, styles, math, dark mode fix)
+**Status:** v0.4.0 — Link navigation, anchor scrolling, default app registration
+**Last session:** 2026-04-13 — .md link navigation, anchor links, --set-default flag
 
 **Usage:**
 ```bash
@@ -93,6 +94,7 @@ md-reader README.md --style latex # set initial style preset
 md-reader README.md --pdf        # export as PDF
 md-reader file.md --no-open      # convert only, print path
 md-reader file.md --output ~/Desktop/out.html
+md-reader --set-default            # register as default .md handler
 ```
 
 **Desktop app:** Download installers from [GitHub Releases](https://github.com/mj-deving/markdown-reader/releases) (.deb, .AppImage, .msi, .exe)

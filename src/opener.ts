@@ -1,5 +1,5 @@
 // Detect WSL2 environment
-function isWsl(): boolean {
+export function isWsl(): boolean {
   return !!process.env.WSL_DISTRO_NAME ||
     (process.platform === 'linux' &&
       Bun.file('/proc/version').size > 0 &&
@@ -8,7 +8,7 @@ function isWsl(): boolean {
 }
 
 // Convert a Linux path to a Windows path via wslpath
-async function toWindowsPath(linuxPath: string): Promise<string> {
+export async function toWindowsPath(linuxPath: string): Promise<string> {
   const proc = Bun.spawn(['wslpath', '-w', linuxPath], { stdout: 'pipe' })
   const output = await new Response(proc.stdout).text()
   return output.trim()

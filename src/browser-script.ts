@@ -327,6 +327,46 @@ export const BROWSER_SCRIPT = `
     }
   });
 
+  // ── Anchor link interception: smooth scroll within content div ───────
+  // In-page #hash links need to scroll the #content div, not the window,
+  // since content is the scrollable container.
+  contentEl.addEventListener('click', function(e) {
+    var link = e.target.closest ? e.target.closest('a[href]') : null;
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href) return;
+
+    // Handle in-page anchor links (#section)
+    if (href.charAt(0) === '#') {
+      e.preventDefault();
+      var targetId = href.slice(1);
+      var target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Update URL hash without scrolling the window
+        history.replaceState(null, '', href);
+      }
+      return;
+    }
+
+    // Handle .md file links — navigate to them (works in watch mode server)
+    if (href.match(/\\.md(#.*)?$/) && !href.match(/^https?:\\/\\//)) {
+      // Let the browser navigate naturally — watch mode server handles .md routes,
+      // static mode has rewritten .md hrefs to .html at build time
+      return;
+    }
+  });
+
+  // On initial load, scroll to hash target if present
+  if (window.location.hash) {
+    var hashTarget = document.getElementById(window.location.hash.slice(1));
+    if (hashTarget) {
+      setTimeout(function() {
+        hashTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }
+
   // ── PDF export ────────────────────────────────────────────────────────
   var pdfExport = document.getElementById('pdf-export');
   if (pdfExport) {
