@@ -324,8 +324,191 @@ export const BROWSER_SCRIPT = `
           e.preventDefault();
         }
         break;
+
+      case 'f':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          openFindOverlay();
+        }
+        break;
+
+      case '=':
+      case '+':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          applyZoom(getZoom() + ZOOM_STEP);
+        }
+        break;
+
+      case '-':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          applyZoom(getZoom() - ZOOM_STEP);
+        }
+        break;
+
+      case '0':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          applyZoom(ZOOM_DEFAULT);
+        }
+        break;
     }
   });
+
+  // ── Zoom controls ───────────────────────────────────────────────────
+  var ZOOM_STEP = 10;
+  var ZOOM_MIN = 60;
+  var ZOOM_MAX = 200;
+  var ZOOM_DEFAULT = 100;
+
+  function getZoom() {
+    var z = parseInt(localStorage.getItem('md-reader-zoom') || '100', 10);
+    return isNaN(z) ? ZOOM_DEFAULT : Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+  }
+
+  function applyZoom(percent) {
+    percent = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, percent));
+    localStorage.setItem('md-reader-zoom', String(percent));
+    var article = contentEl.querySelector('article.prose');
+    if (article) article.style.fontSize = percent + '%';
+  }
+
+  applyZoom(getZoom());
+
+  // ── Find-in-page ──────────────────────────────────────────────────────
+  var findOverlay = null;
+  var findInput = null;
+  var findCount = null;
+  var findMatches = [];
+  var findCurrentIdx = -1;
+
+  function createFindOverlay() {
+    if (findOverlay) return;
+    findOverlay = document.createElement('div');
+    findOverlay.id = 'find-overlay';
+    findOverlay.innerHTML =
+      '<input id="find-input" type="text" placeholder="Find in page..." autocomplete="off" />' +
+      '<span id="find-count"></span>' +
+      '<button id="find-prev" title="Previous (Shift+Enter)">&uarr;</button>' +
+      '<button id="find-next" title="Next (Enter)">&darr;</button>' +
+      '<button id="find-close" title="Close (Escape)">&times;</button>';
+    document.body.appendChild(findOverlay);
+
+    findInput = document.getElementById('find-input');
+    findCount = document.getElementById('find-count');
+
+    findInput.addEventListener('input', function() { doFind(findInput.value); });
+    findInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (e.shiftKey) { navigateFind(-1); } else { navigateFind(1); }
+      }
+      if (e.key === 'Escape') { closeFindOverlay(); }
+    });
+    document.getElementById('find-prev').addEventListener('click', function() { navigateFind(-1); });
+    document.getElementById('find-next').addEventListener('click', function() { navigateFind(1); });
+    document.getElementById('find-close').addEventListener('click', closeFindOverlay);
+  }
+
+  function openFindOverlay() {
+    createFindOverlay();
+    findOverlay.classList.add('visible');
+    findInput.focus();
+    if (findInput.value) findInput.select();
+  }
+
+  function closeFindOverlay() {
+    if (!findOverlay) return;
+    findOverlay.classList.remove('visible');
+    clearHighlights();
+    findInput.blur();
+  }
+
+  function clearHighlights() {
+    var marks = contentEl.querySelectorAll('mark.find-highlight');
+    marks.forEach(function(m) {
+      var parent = m.parentNode;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    });
+    findMatches = [];
+    findCurrentIdx = -1;
+    if (findCount) findCount.textContent = '';
+  }
+
+  function doFind(query) {
+    clearHighlights();
+    if (!query || query.length < 2) return;
+
+    var article = contentEl.querySelector('article.prose');
+    if (!article) return;
+
+    // Walk text nodes and highlight matches
+    var walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, null);
+    var textNodes = [];
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.parentElement && node.parentElement.tagName !== 'SCRIPT' && node.parentElement.tagName !== 'STYLE') {
+        textNodes.push(node);
+      }
+    }
+
+    var lowerQuery = query.toLowerCase();
+    for (var i = 0; i < textNodes.length; i++) {
+      var textNode = textNodes[i];
+      var text = textNode.textContent;
+      var lowerText = text.toLowerCase();
+      var idx = lowerText.indexOf(lowerQuery);
+      if (idx === -1) continue;
+
+      // Split the text node and wrap the match in <mark>
+      var before = text.substring(0, idx);
+      var match = text.substring(idx, idx + query.length);
+      var after = text.substring(idx + query.length);
+
+      var mark = document.createElement('mark');
+      mark.className = 'find-highlight';
+      mark.textContent = match;
+
+      var parent = textNode.parentNode;
+      if (before) parent.insertBefore(document.createTextNode(before), textNode);
+      parent.insertBefore(mark, textNode);
+      if (after) parent.insertBefore(document.createTextNode(after), textNode);
+      parent.removeChild(textNode);
+
+      findMatches.push(mark);
+      // Re-scan remaining text in the 'after' node
+      if (after.toLowerCase().indexOf(lowerQuery) !== -1) {
+        textNodes.splice(i + 1, 0, mark.nextSibling);
+      }
+    }
+
+    if (findMatches.length > 0) {
+      findCurrentIdx = 0;
+      findMatches[0].classList.add('find-current');
+      findMatches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    updateFindCount();
+  }
+
+  function navigateFind(dir) {
+    if (findMatches.length === 0) return;
+    if (findCurrentIdx >= 0) findMatches[findCurrentIdx].classList.remove('find-current');
+    findCurrentIdx = (findCurrentIdx + dir + findMatches.length) % findMatches.length;
+    findMatches[findCurrentIdx].classList.add('find-current');
+    findMatches[findCurrentIdx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    updateFindCount();
+  }
+
+  function updateFindCount() {
+    if (!findCount) return;
+    if (findMatches.length === 0) {
+      findCount.textContent = findInput && findInput.value.length >= 2 ? 'No matches' : '';
+    } else {
+      findCount.textContent = (findCurrentIdx + 1) + '/' + findMatches.length;
+    }
+  }
 
   // ── Anchor link interception: smooth scroll within content div ───────
   // In-page #hash links need to scroll the #content div, not the window,

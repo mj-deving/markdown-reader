@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90D9"/>
+      <stop offset="100%" style="stop-color:#357ABD"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded rectangle background -->
+  <rect width="512" height="512" rx="80" ry="80" fill="url(#bg)"/>
+  <!-- Document page shape -->
+  <path d="M140 80 L340 80 L400 140 L400 432 Q400 448 384 448 L140 448 Q124 448 124 432 L124 96 Q124 80 140 80 Z" fill="white" opacity="0.95"/>
+  <!-- Folded corner -->
+  <path d="M340 80 L340 140 L400 140 Z" fill="white" opacity="0.7"/>
+  <!-- Markdown down arrow -->
+  <path d="M200 200 L200 310 L168 278" stroke="#357ABD" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M200 310 L232 278" stroke="#357ABD" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Second stroke of M -->
+  <path d="M280 310 L280 200 L320 260 L360 200 L360 310" stroke="#357ABD" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Horizontal text lines -->
+  <line x1="160" y1="360" x2="340" y2="360" stroke="#357ABD" stroke-width="12" stroke-linecap="round" opacity="0.4"/>
+  <line x1="160" y1="390" x2="290" y2="390" stroke="#357ABD" stroke-width="12" stroke-linecap="round" opacity="0.3"/>
+</svg>

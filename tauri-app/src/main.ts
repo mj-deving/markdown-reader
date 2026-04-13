@@ -8,13 +8,20 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { convertMarkdown } from '../../src/converter'
 import { CSS } from '../../src/styles'
+import { STYLE_PRESETS, type StylePreset } from '../../src/browser-styles'
+// PRESET_CSS is a template literal string — import it for runtime injection
+import { PRESET_CSS } from '../../src/browser-styles'
 import { buildToc, setupScrollSpy } from './toc'
 import './app.css'
 
-// ── Inject the markdown styles ───────────────────────────────────────────────
+// ── Inject the markdown styles + preset CSS ─────────────────────────────────
 const styleEl = document.createElement('style')
 styleEl.textContent = CSS
 document.head.appendChild(styleEl)
+
+const presetStyleEl = document.createElement('style')
+presetStyleEl.textContent = PRESET_CSS
+document.head.appendChild(presetStyleEl)
 
 // ── DOM references ───────────────────────────────────────────────────────────
 const contentEl = document.getElementById('content')!
@@ -66,6 +73,37 @@ function cycleTheme(): void {
 
 // Apply stored theme immediately
 applyTheme(getStoredTheme())
+
+// ── Style preset management ─────────────────────────────────────────────────
+const PRESET_LABELS: Record<string, string> = {
+  default: 'Default', latex: 'LaTeX', mono: 'Mono', newspaper: 'News',
+}
+const styleToggle = document.getElementById('style-toggle')
+const styleLabel = document.getElementById('style-label')
+
+function getStoredStyle(): StylePreset {
+  const stored = localStorage.getItem('md-reader-style') as StylePreset | null
+  if (stored && STYLE_PRESETS.includes(stored)) return stored
+  return 'default'
+}
+
+function applyStyle(preset: StylePreset): void {
+  for (const p of STYLE_PRESETS) {
+    document.body.classList.remove(`style-${p}`)
+  }
+  document.body.classList.add(`style-${preset}`)
+  localStorage.setItem('md-reader-style', preset)
+  if (styleLabel) styleLabel.textContent = PRESET_LABELS[preset] ?? preset
+}
+
+function cycleStyle(): void {
+  const current = getStoredStyle()
+  const idx = STYLE_PRESETS.indexOf(current)
+  const next = STYLE_PRESETS[(idx + 1) % STYLE_PRESETS.length]
+  applyStyle(next)
+}
+
+applyStyle(getStoredStyle())
 
 // ── Sidebar toggle ───────────────────────────────────────────────────────────
 function toggleSidebar(): void {
@@ -329,6 +367,7 @@ document.addEventListener('keydown', (e) => {
 // ── Toolbar event wiring ─────────────────────────────────────────────────────
 sidebarToggle.addEventListener('click', toggleSidebar)
 themeToggle.addEventListener('click', cycleTheme)
+if (styleToggle) styleToggle.addEventListener('click', cycleStyle)
 
 // ── TOC click handler: smooth scroll to heading ──────────────────────────────
 tocSidebar.addEventListener('click', (e) => {

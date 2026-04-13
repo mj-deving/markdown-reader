@@ -94,7 +94,7 @@ const MERMAID_SCRIPT = `
 export function buildHtml(
   title: string,
   body: string,
-  options: { style?: StylePreset; injectScript?: string } = {},
+  options: { style?: StylePreset; injectScript?: string; injectStyle?: string } = {},
 ): string {
   const style = options.style ?? 'default'
   const hasMermaid = body.includes('language-mermaid')
@@ -107,6 +107,7 @@ export function buildHtml(
   <title>${escapeHtml(title)}</title>
   <style>${CSS}</style>
   <style>${BROWSER_CSS}</style>
+${options.injectStyle ? `  <style>${options.injectStyle}</style>` : ''}
 </head>
 <body class="style-${style}">
   <div id="toolbar">

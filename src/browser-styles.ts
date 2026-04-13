@@ -506,6 +506,53 @@ math[display="block"] { display: block; text-align: center; margin: 1.5rem 0; fo
   #content article.prose { padding: 2rem 1.5rem 3rem; }
 }
 
+/* ── Find-in-page overlay ─────────────────────────────────────────────── */
+#find-overlay {
+  position: fixed;
+  top: calc(var(--toolbar-height) + 8px);
+  right: 16px;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 200;
+  font-size: 13px;
+}
+#find-overlay.visible { display: flex; }
+#find-input {
+  width: 200px;
+  padding: 4px 8px;
+  border: 1px solid var(--toolbar-border);
+  border-radius: 4px;
+  background: var(--page-bg);
+  color: var(--toc-title-color);
+  font-size: 13px;
+  outline: none;
+}
+#find-input:focus { border-color: var(--accent); }
+#find-count { color: var(--toolbar-text); min-width: 60px; text-align: center; }
+#find-overlay button {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--toolbar-text);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 1;
+}
+#find-overlay button:hover { background: var(--toc-active-bg); }
+mark.find-highlight { background: #fff3a8; color: inherit; border-radius: 2px; padding: 0 1px; }
+mark.find-highlight.find-current { background: #ff9632; color: #fff; }
+
+html[data-theme="dark"] #find-overlay { background: var(--toolbar-bg); }
+html[data-theme="dark"] mark.find-highlight { background: #5c4a00; color: #fff; }
+html[data-theme="dark"] mark.find-highlight.find-current { background: #c66a00; }
+
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {
   body { display: block; background: #fff; }
@@ -976,4 +1023,7 @@ body.style-newspaper #content article.prose img {
 `
 
 /** Combined CSS: shell + all presets */
+/** Preset CSS only — used by Tauri app which has its own shell CSS */
+export { PRESET_CSS }
+
 export const BROWSER_CSS = SHELL_CSS + PRESET_CSS

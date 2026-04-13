@@ -50,7 +50,9 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 │   ├── watcher.ts           # --watch live-reload server (Bun.serve + WebSocket)
 │   ├── pdf.ts               # --pdf export via headless Chrome/Edge/Chromium
 │   ├── opener.ts            # WSL2-aware browser opener (cmd.exe + wslpath)
-│   └── set-default.ts       # --set-default: register as default .md handler
+│   ├── set-default.ts       # --set-default: register as default .md handler
+│   ├── latex-font.ts        # --latex-font: base64-embedded Latin Modern woff2
+│   └── fonts/               # Latin Modern Roman woff2 files (regular, bold, italic)
 ├── tauri-app/               # Tauri v2 desktop application
 │   ├── src/                 # Frontend TypeScript (runs in WebView)
 │   │   ├── main.ts          # Orchestrator: receives markdown, renders, manages TOC
@@ -83,14 +85,15 @@ CLI tool and Tauri v2 desktop app that renders markdown files as a beautiful HTM
 
 ## Current State
 
-**Status:** v0.4.0 — Link navigation, anchor scrolling, default app registration
-**Last session:** 2026-04-13 — .md link navigation, anchor links, --set-default flag
+**Status:** v0.5.0 — Latin Modern fonts, app icons, Tauri presets, find/zoom
+**Last session:** 2026-04-13 — Six open items: fonts, icons, Tauri presets, find-in-page, zoom, docs
 
 **Usage:**
 ```bash
 md-reader README.md              # convert + open in browser
 md-reader README.md --watch      # live-reload in browser
-md-reader README.md --style latex # set initial style preset
+md-reader README.md --style latex  # set initial style preset
+md-reader README.md --latex-font   # embed Latin Modern font in LaTeX preset
 md-reader README.md --pdf        # export as PDF
 md-reader file.md --no-open      # convert only, print path
 md-reader file.md --output ~/Desktop/out.html
@@ -101,9 +104,9 @@ md-reader --set-default            # register as default .md handler
 
 ## Open Items
 
-- [ ] `--latex-font` flag for embedded Latin Modern font
-- [ ] Design proper app icons (currently solid-color placeholders)
-- [ ] Port style presets to Tauri desktop app
-- [ ] Consider code signing for future releases (SmartScreen)
-- [ ] Tauri auto-update plugin for future versions
-- [ ] Add find-in-page (Ctrl+F), zoom controls (Ctrl+/-)
+- [x] `--latex-font` flag for embedded Latin Modern font
+- [x] App icons designed (document + markdown M motif)
+- [x] Style presets ported to Tauri desktop app
+- [x] Find-in-page (Ctrl+F) and zoom controls (Ctrl+/-)
+- [ ] Code signing — see docs/code-signing.md
+- [ ] Tauri auto-update — see docs/auto-update.md

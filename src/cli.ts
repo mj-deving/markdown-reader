@@ -7,8 +7,9 @@ import { startWatchMode } from './watcher'
 import { findBrowser, exportPdf } from './pdf'
 import { setDefault } from './set-default'
 import { join, basename, extname, dirname, resolve } from 'path'
+import { generateLatinModernCSS } from './latex-font'
 
-const VERSION = '0.4.0'
+const VERSION = '0.5.0'
 
 const HELP = `
 md-reader — Render markdown as a beautiful HTML reading experience
@@ -23,6 +24,7 @@ Options:
   --output <path>   Save HTML/PDF to a specific path
   --style <name>    Set reading style: default, latex, mono, newspaper
   --no-open         Convert but don't open in browser
+  --latex-font      Embed Latin Modern font in LaTeX style preset
   --set-default     Register md-reader as the default app for .md files
   --version         Show version
   --help            Show this help
@@ -58,6 +60,7 @@ if (args.includes('--set-default')) {
 const watchMode = args.includes('--watch') || args.includes('-w')
 const pdfMode = args.includes('--pdf')
 const noOpen = args.includes('--no-open')
+const latexFont = args.includes('--latex-font')
 const outputIdx = args.indexOf('--output')
 let outputPath: string | null = null
 if (outputIdx !== -1) {
@@ -115,7 +118,8 @@ if (watchMode) {
   const title = extractTitle(markdown, titleFallback)
 
   const htmlBody = await convertMarkdown(markdown)
-  const fullHtml = buildHtml(title, htmlBody, { style })
+  const fontCSS = latexFont ? await generateLatinModernCSS() : undefined
+  const fullHtml = buildHtml(title, htmlBody, { style, injectStyle: fontCSS })
 
   if (pdfMode) {
     // ── PDF export mode ───────────────────────────────────────────────────
