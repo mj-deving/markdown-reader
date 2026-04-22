@@ -1,5 +1,7 @@
 # markdown-reader
 
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square) ![CLI](https://img.shields.io/badge/-CLI-333333?style=flat-square)
+
 CLI tool and desktop app that renders markdown files as a beautiful HTML reading experience.
 
 GitHub-style rendering, dark/light theme, switchable style presets, syntax highlighting, math support, live reload, PDF export — all self-contained with zero external requests.
